@@ -1,0 +1,22 @@
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  name: redis-nosave
+  labels:
+    app: redis-nosave
+spec:
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: redis-nosave
+    spec:
+      containers:
+      - name: redis
+        image: redis:4.0.2-32bit
+        args:
+        - --appendonly no
+        - --save ""
+        ports:
+        - containerPort: 6379

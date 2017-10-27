@@ -1,0 +1,14 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: gce
+  name: gce-ingress
+spec:
+  backend:
+    serviceName: nginx-ingress
+    servicePort: 90
+  tls:
+  - secretName: gce-ingress
+    hosts:
+    - example.com

@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-ingress
+  labels:
+    app: nginx-ingress
+data:
+  body-size: 5m
+  enable-vts-status: "true"
+  hsts: "true"
+  hsts-include-subdomains: "true"
+  hsts-max-age: "63072000"
+  hsts-preload: "true"
+  server-tokens: "false"
+  upstream-keepalive-connections: "75"
+  use-gzip: "true"
