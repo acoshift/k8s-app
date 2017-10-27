@@ -7,7 +7,7 @@ metadata:
 spec:
   backend:
     serviceName: nginx-ingress
-    servicePort: 90
+    servicePort: 80
   tls:
   - secretName: gce-ingress
     hosts:
