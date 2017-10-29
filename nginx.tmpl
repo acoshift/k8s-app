@@ -585,7 +585,7 @@ stream {
         ssl_certificate                         {{ $server.SSLCertificate }};
         ssl_certificate_key                     {{ $server.SSLCertificate }};
         {{ if not (empty $server.SSLFullChainCertificate)}}
-        ssl_trusted_certificate                 {{ $server.SSLFullChainCertificate }};        
+        ssl_trusted_certificate                 {{ $server.SSLFullChainCertificate }};
         ssl_stapling                            on;
         ssl_stapling_verify                     on;
         {{ end }}
@@ -609,7 +609,7 @@ stream {
         {{ if not (empty $server.ServerSnippet) }}
         {{ $server.ServerSnippet }}
         {{ end }}
-        
+
         {{ range $location := $server.Locations }}
         {{ $path := buildLocation $location }}
         {{ $authPath := buildAuthLocation $location }}
@@ -666,7 +666,9 @@ stream {
             {{ if (or $location.Rewrite.ForceSSLRedirect (and (not (empty $server.SSLCertificate)) $location.Rewrite.SSLRedirect)) }}
             # enforce ssl on server side
             if ($pass_access_scheme = http) {
-			    more_clear_headers 'Strict-Transport-Security';
+			    {{ if $all.Cfg.HSTS }}
+                more_clear_headers "Strict-Transport-Security";
+                {{ end }}
                 return 301 https://$best_http_host$request_uri;
             }
             {{ end }}
