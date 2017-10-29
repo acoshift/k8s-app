@@ -28,6 +28,10 @@ spec:
                   values:
                   - nginx-ingress
               topologyKey: kubernetes.io/hostname
+      volumes:
+      - name: nginx-template
+        configMap:
+          name: nginx-template
       containers:
       - name: nginx-ingress-controller
         image: gcr.io/google-containers/nginx-ingress-controller:0.9.0-beta.15
@@ -71,6 +75,10 @@ spec:
           requests:
             cpu: 50m
             memory: 100Mi
+        volumeMounts:
+        - name: nginx-template
+          mountPath: /etc/nginx/template
+          readOnly: true
   strategy:
     type: RollingUpdate
     rollingUpdate:

@@ -3,10 +3,12 @@ kind: Ingress
 metadata:
   annotations:
     kubernetes.io/ingress.class: nginx
+    kubernetes.io/tls-acme: "true"
     ingress.kubernetes.io/limit-rps: "10"
   name: nginx-ingress
 spec:
   rules:
+  # Add your backends here
   - host: example.com
     http:
       paths:
@@ -14,5 +16,8 @@ spec:
           serviceName: example
           servicePort: 8080
   tls:
-  - hosts:
+  - secretName: gce-ingress
+    # Add your kube-lego domains here
+    hosts:
     - example.com
+
