@@ -2,6 +2,8 @@ apiVersion: apps/v1beta1
 kind: StatefulSet
 metadata:
   name: postgres10
+  labels:
+    app: postgres10
 spec:
   serviceName: postgres10
   replicas: 1
