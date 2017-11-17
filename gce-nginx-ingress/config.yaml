@@ -6,6 +6,7 @@ metadata:
     app: nginx-ingress
 data:
   body-size: 5m
+  proxy-body-size: 5m
   enable-vts-status: "true"
   hsts: "true"
   hsts-include-subdomains: "true"
