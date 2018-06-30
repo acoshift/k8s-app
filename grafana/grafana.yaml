@@ -1,0 +1,139 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana
+  labels:
+    app: grafana
+data:
+  grafana.ini: |
+    [server]
+      ; root_url =
+
+    [database]
+      url = postgres://grafana@postgres/grafana?sslmode=disable
+      max_idle_conn = 2
+      max_open_conn = 6
+
+    [security]
+      admin_user = admin
+      admin_password = admin
+      login_remember_days = 1
+
+    [users]
+      allow_sign_up = false
+      allow_org_create = false
+      viewers_can_edit = false
+
+    [auth]
+      disable_login_form = false
+      disable_signout_menu = false
+
+    [auth.anonymous]
+      enabled = false
+
+    [session]
+      provider = redis
+      provider_config = addr=redis:6379,pool_size=10,prefix=grafana
+      cookie_secure = true
+      session_life_time = 86400
+
+    [analytics]
+      reporting_enabled = false
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana
+  labels:
+    app: grafana
+spec:
+  selector:
+    app: grafana
+  ports:
+  - name: http
+    port: 3000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana
+  labels:
+    app: grafana
+spec:
+  replicas: 1
+  revisionHistoryLimit: 1
+  selector:
+    matchLabels:
+      app: grafana
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+  template:
+    metadata:
+      name: grafana
+      labels:
+        app: grafana
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - grafana
+            topologyKey: kubernetes.io/hostname
+      containers:
+      - name: grafana
+        image: grafana/grafana:5.2.1
+        ports:
+        - containerPort: 3000
+        env:
+        - name: GF_INSTALL_PLUGINS
+          value: ""
+        livenessProbe:
+          httpGet:
+            path: /api/health
+            port: 3000
+          periodSeconds: 10
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 3
+          initialDelaySeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /api/health
+            port: 3000
+          periodSeconds: 5
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 3
+          initialDelaySeconds: 5
+        resources:
+          requests:
+            cpu: 10m
+            memory: 50Mi
+          limits:
+            memory: 400Mi
+        volumeMounts:
+        - name: config
+          mountPath: /etc/grafana/grafana.ini
+          subPath: grafana.ini
+      volumes:
+      - name: config
+        configMap:
+          name: grafana
+---
+apiVersion: policy/v1beta1
+kind: PodDisruptionBudget
+metadata:
+  name: grafana
+  labels:
+    app: grafana
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: grafana
