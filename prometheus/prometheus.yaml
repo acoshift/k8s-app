@@ -112,7 +112,6 @@ data:
   prometheus.yml: |
     # global:
     #   external_labels:
-    #     _stackdriver_project_id: 'prometheus-to-sd'
     #     _kubernetes_cluster_name: 'prom-test-cluster-2'
     #     _kubernetes_location: 'us-central1-a'
 
