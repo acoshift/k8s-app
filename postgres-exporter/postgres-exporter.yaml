@@ -1,0 +1,37 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: postgres-exporter
+  namespace: prometheus
+spec:
+  replicas: 1
+  revisionHistoryLimit: 0
+  selector:
+    matchLabels:
+      app: postgres-exporter
+  template:
+    metadata:
+      name: postgres-exporter
+      namespace: prometheus
+      labels:
+        app: postgres-exporter
+      annotations:
+        prometheus.io/scrape: 'true'
+        prometheus.io/port: '9187'
+    spec:
+      containers:
+      - name: postgres-exporter
+        image: wrouesnel/postgres_exporter
+        imagePullPolicy: Always
+        env:
+        - name: DATA_SOURCE_NAME
+          value: postgresql://postgres_exporter@postgres:5432/postgres?sslmode=disable
+        ports:
+        - containerPort: 9187
+        resources:
+          requests:
+            cpu: 5m
+            memory: 50Mi
+          limits:
+            cpu: 50m
+            memory: 100Mi
