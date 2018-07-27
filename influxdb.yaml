@@ -47,8 +47,6 @@ spec:
       - name: data
         persistentVolumeClaim:
           claimName: data
-  updateStrategy:
-    type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
       name: data
