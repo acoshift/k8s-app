@@ -47,7 +47,7 @@ spec:
         image: redis:4.0.10
         args:
         - "--databases 1"
-        - "--maxmemory 60mb"
+        - "--maxmemory 50mb"
         - "--maxmemory-policy allkeys-lru"
         ports:
         - name: redis
@@ -58,9 +58,9 @@ spec:
         resources:
           requests:
             cpu: 10m
-            memory: 70Mi
+            memory: 60Mi
           limits:
-            memory: 200Mi
+            memory: 150Mi
       volumes:
       - name: data
         persistentVolumeClaim:
