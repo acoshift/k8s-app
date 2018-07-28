@@ -25,6 +25,8 @@ EOF
 
 kubectl certificate approve my-svc.my-namespace
 
+sleep 3
+
 kubectl get csr my-svc.my-namespace -o jsonpath='{.status.certificate}' | base64 --decode > server.crt
 
 kubectl create secret tls my-secret --key=server-key.pem --cert=server.crt
