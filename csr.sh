@@ -4,7 +4,11 @@ cat <<EOF | cfssl genkey - | cfssljson -bare server
   "key": {
     "algo": "ecdsa",
     "size": 256
-  }
+  },
+  "CN": "",
+  "hosts": [
+    ""
+  ]
 }
 EOF
 
