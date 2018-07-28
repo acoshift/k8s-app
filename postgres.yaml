@@ -9,6 +9,20 @@ data:
   POSTGRES_PASSWORD: cm9vdA==
 ---
 apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres
+  labels:
+    app: postgres
+spec:
+  # storageClassName: standard
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: v1
 kind: Service
 metadata:
   name: postgres
@@ -61,13 +75,4 @@ spec:
       volumes:
       - name: data
         persistentVolumeClaim:
-          claimName: data
-  volumeClaimTemplates:
-  - metadata:
-      name: data
-    spec:
-      accessModes:
-      - ReadWriteOnce
-      resources:
-        requests:
-          storage: 10Gi
+          claimName: postgres
