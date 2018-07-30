@@ -1,0 +1,143 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: alertmanager
+  namespace: prometheus
+data:
+  alertmanager.yml: |
+    global: null
+    receivers:
+    - name: default-receiver
+    route:
+      group_interval: 5m
+      group_wait: 10s
+      receiver: default-receiver
+      repeat_interval: 3h
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: alertmanager-operated
+  namespace: prometheus
+spec:
+  type: ClusterIP
+  clusterIP: None
+  selector:
+    k8s-app: alertmanager
+  ports:
+    - name: cluster
+      port: 6783
+      protocol: TCP
+      targetPort: 6783
+    - name: http
+      port: 9093
+      protocol: TCP
+      targetPort: 9093
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: alertmanager
+  namespace: prometheus
+  labels:
+    k8s-app: alertmanager
+spec:
+  ports:
+    - name: http
+      port: 9093
+      protocol: TCP
+      targetPort: 9093
+  selector:
+    k8s-app: alertmanager
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: alertmanager
+  namespace: prometheus
+  labels:
+    k8s-app: alertmanager
+spec:
+  serviceName: alertmanager-operated
+  replicas: 2
+  podManagementPolicy: OrderedReady
+  updateStrategy:
+    type: RollingUpdate
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      k8s-app: alertmanager
+  template:
+    metadata:
+      labels:
+        k8s-app: alertmanager
+    spec:
+      serviceAccountName: prometheus
+      containers:
+        - name: alertmanager
+          image: quay.io/prometheus/alertmanager
+          imagePullPolicy: Always
+          args:
+            - --config.file=/etc/config/alertmanager.yml
+            - --storage.path=/data
+            - --web.listen-address=:9093
+            - --web.route-prefix=/
+            - --cluster.listen-address=$(POD_IP):6783
+            - --cluster.peer=alertmanager-0.alertmanager-operated.prometheus.svc:6783
+            - --cluster.peer=alertmanager-1.alertmanager-operated.prometheus.svc:6783
+            - --cluster.peer=alertmanager-2.alertmanager-operated.prometheus.svc:6783
+          env:
+          - name: POD_IP
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: status.podIP
+          ports:
+            - containerPort: 9093
+              name: http
+            - containerPort: 6783
+              name: cluster
+          readinessProbe:
+            httpGet:
+              path: /#/status
+              port: 9093
+            initialDelaySeconds: 30
+            timeoutSeconds: 30
+          volumeMounts:
+            - name: config-volume
+              mountPath: /etc/config
+            - name: data
+              mountPath: "/data"
+              subPath: ""
+          resources:
+            limits:
+              cpu: 10m
+              memory: 50Mi
+            requests:
+              cpu: 10m
+              memory: 50Mi
+      volumes:
+        - name: config-volume
+          configMap:
+            name: alertmanager
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: k8s-app
+                operator: In
+                values:
+                - alertmanager
+            topologyKey: "kubernetes.io/hostname"
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      # storageClassName: standard
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 2Gi
