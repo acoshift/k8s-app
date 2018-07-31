@@ -1,0 +1,123 @@
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRole
+metadata:
+  name: gke-preemptible-killer
+  labels:
+    app: gke-preemptible-killer
+rules:
+- apiGroups: [""]
+  resources:
+  - nodes
+  verbs:
+  - get
+  - list
+  - patch
+  - update
+  - delete
+- apiGroups: [""]
+  resources:
+  - pods
+  verbs:
+  - delete
+  - get
+  - list
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: gke-preemptible-killer
+  labels:
+    app: gke-preemptible-killer
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: gke-preemptible-killer
+subjects:
+- kind: ServiceAccount
+  name: gke-preemptible-killer
+  namespace: default
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: gke-preemptible-killer
+  labels:
+    app: gke-preemptible-killer
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: gke-preemptible-killer
+  labels:
+    app: gke-preemptible-killer
+type: Opaque
+data:
+  google-service-account.json: "add service account base64 here"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gke-preemptible-killer
+  labels:
+    app: gke-preemptible-killer
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  revisionHistoryLimit: 0
+  selector:
+    matchLabels:
+      app: gke-preemptible-killer
+  template:
+    metadata:
+      labels:
+        app: gke-preemptible-killer
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9001"
+    spec:
+      serviceAccount: gke-preemptible-killer
+      terminationGracePeriodSeconds: 300
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 10
+            preference:
+              matchExpressions:
+              - key: cloud.google.com/gke-preemptible
+                operator: In
+                values:
+                - "true"
+      containers:
+      - name: gke-preemptible-killer
+        image: estafette/estafette-gke-preemptible-killer:1.0.44
+        ports:
+        - name: prom-metrics
+          containerPort: 9001
+        env:
+        - name: DRAIN_TIMEOUT
+          value: "300"
+        - name: INTERVAL
+          value: "600"
+        - name: GOOGLE_APPLICATION_CREDENTIALS
+          value: /etc/app-secrets/google-service-account.json
+        resources:
+          requests:
+            cpu: 1m
+            memory: 15Mi
+          limits:
+            cpu: 10m
+            memory: 50Mi
+        livenessProbe:
+          httpGet:
+            path: /metrics
+            port: prom-metrics
+          initialDelaySeconds: 30
+          timeoutSeconds: 1
+        volumeMounts:
+        - name: app-secrets
+          mountPath: /etc/app-secrets
+      volumes:
+      - name: app-secrets
+        secret:
+          secretName: gke-preemptible-killer
