@@ -94,7 +94,7 @@ spec:
         image: quay.io/prometheus/prometheus
         imagePullPolicy: Always
         args:
-        - --config.file=/etc/config/prometheus.yml
+        - --config.file=/etc/config/prometheus.yaml
         - --storage.tsdb.path=/data
         - --log.level=error
         ports:
