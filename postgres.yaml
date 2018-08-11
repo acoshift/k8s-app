@@ -62,6 +62,13 @@ spec:
               key: POSTGRES_PASSWORD
         ports:
         - containerPort: 5432
+        lifecycle:
+          preStop:
+            exec:
+              command:
+              - /bin/sh
+              - -c
+              - gosu postgres pg_ctl -D /var/lib/postgresql/data -m fast -w stop
         volumeMounts:
         - name: data
           mountPath: /var/lib/postgresql/data
