@@ -50,7 +50,7 @@ spec:
     spec:
       containers:
       - name: mysql
-        image: mysql:5.7.22
+        image: mysql:5.7.23
         imagePullPolicy: Always
         env:
         - name: MYSQL_ROOT_PASSWORD
