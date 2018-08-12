@@ -53,7 +53,7 @@ spec:
     spec:
       containers:
       - name: postgres
-        image: postgres:10.4
+        image: postgres:10.5
         env:
         - name: POSTGRES_PASSWORD
           valueFrom:

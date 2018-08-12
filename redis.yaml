@@ -44,7 +44,7 @@ spec:
     spec:
       containers:
       - name: redis
-        image: redis:4.0.10
+        image: redis:4.0.11
         args:
         - "--databases 1"
         - "--maxmemory 50mb"
