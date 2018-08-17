@@ -43,6 +43,9 @@ metadata:
 spec:
   serviceName: mysql
   replicas: 1
+  selector:
+    matchLabels:
+      app: mysql
   template:
     metadata:
       labels:
