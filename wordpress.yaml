@@ -43,6 +43,9 @@ metadata:
 spec:
   serviceName: wordpress
   replicas: 1
+  selector:
+    matchLabels:
+      app: wordpress
   template:
     metadata:
       labels:
@@ -68,6 +71,7 @@ spec:
         volumeMounts:
         - name: data
           mountPath: /var/www/html
+          subPath: data
       volumes:
       - name: data
         persistentVolumeClaim:

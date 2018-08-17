@@ -43,6 +43,9 @@ metadata:
 spec:
   serviceName: mariadb
   replicas: 1
+  selector:
+    matchLabels:
+      app: mariadb
   template:
     metadata:
       labels:
@@ -63,6 +66,7 @@ spec:
         volumeMounts:
         - name: data
           mountPath: /var/lib/mysql
+          subPath: data
       volumes:
       - name: data
         persistentVolumeClaim:
