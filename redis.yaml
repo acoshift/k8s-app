@@ -5,6 +5,7 @@ metadata:
   labels:
     app: redis
 spec:
+  clusterIP: None
   selector:
     app: redis
   ports:
@@ -34,21 +35,34 @@ metadata:
 spec:
   serviceName: redis
   replicas: 1
+  updateStrategy:
+    type: RollingUpdate
   selector:
     matchLabels:
       app: redis
   template:
     metadata:
+      annotations:
+        prometheus.io/port: "9121"
+        prometheus.io/scrape: "true"
       labels:
         app: redis
     spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: cloud.google.com/gke-preemptible
+                operator: DoesNotExist
       containers:
       - name: redis
-        image: redis:4.0.11
+        image: redis:5.0.4
         args:
         - "--databases 1"
         - "--maxmemory 50mb"
         - "--maxmemory-policy allkeys-lru"
+        - "--appendonly yes"
         ports:
         - name: redis
           containerPort: 6379
@@ -58,9 +72,17 @@ spec:
         resources:
           requests:
             cpu: 10m
-            memory: 60Mi
           limits:
-            memory: 150Mi
+            memory: 60Mi
+      - name: exporter
+        image: oliver006/redis_exporter:v0.34.1
+        ports:
+        - name: exporter
+          containerPort: 9121
+        resources:
+          limits:
+            cpu: 5m
+            memory: 20Mi
       volumes:
       - name: data
         persistentVolumeClaim:
