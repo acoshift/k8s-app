@@ -1,0 +1,127 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: wordpress-nginx
+data:
+  nginx.conf: |-
+    user  nginx;
+    worker_processes  auto;
+
+    error_log  /var/log/nginx/error.log warn;
+    pid        /var/run/nginx.pid;
+
+    events {
+        worker_connections  1024;
+    }
+
+    http {
+        include       /etc/nginx/mime.types;
+        default_type  application/octet-stream;
+
+        access_log  off;
+
+        sendfile        on;
+        tcp_nopush      on;
+        tcp_nodelay     on;
+
+        keepalive_timeout  650;
+        keepalive_requests 10000000;
+
+        server {
+          listen 80;
+          root /var/www/html;
+          index index.php;
+
+          location / {
+            try_files $uri $uri/ /index.php?q=$uri&$args;
+          }
+
+          if (!-e $request_filename) {
+            rewrite ^/(.+)$ /index.php?q=$1 last;
+          }
+
+          location ~ \.php$ {
+            fastcgi_pass localhost:9000;
+            fastcgi_index index.php;
+            fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+            include fastcgi_params;
+          }
+        }
+    }
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: wordpress
+  labels:
+    app: wordpress
+spec:
+  storageClassName: ssd
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: wordpress
+  labels:
+    app: wordpress
+spec:
+  clusterIP: None
+  selector:
+    app: wordpress
+  ports:
+  - port: 80
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: wordpress
+  labels:
+    app: wordpress
+spec:
+  serviceName: wordpress
+  replicas: 1
+  selector:
+    matchLabels:
+      app: wordpress
+  template:
+    metadata:
+      labels:
+        app: wordpress
+    spec:
+      containers:
+      - name: wordpress
+        image: wordpress:fpm-alpine
+        env:
+        - name: WORDPRESS_DB_HOST
+          value: mysql
+        - name: WORDPRESS_DB_USER
+          value: wordpress
+        - name: WORDPRESS_DB_NAME
+          value: wordpress
+        - name: WORDPRESS_DB_PASSWORD
+          value: password
+        volumeMounts:
+        - name: data
+          mountPath: /var/www/html
+          subPath: data
+      - name: nginx
+        image: nginx:alpine
+        volumeMounts:
+        - name: data
+          mountPath: /var/www/html
+          subPath: data
+        - name: config
+          mountPath: /etc/nginx/nginx.conf
+          subPath: nginx.conf
+      volumes:
+      - name: config
+        configMap:
+          name: wordpress-nginx
+      - name: data
+        persistentVolumeClaim:
+          claimName: wordpress
