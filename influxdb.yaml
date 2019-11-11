@@ -5,6 +5,7 @@ metadata:
   labels:
     app: influxdb
 spec:
+  clusterIP: None
   selector:
     app: influxdb
   ports:
@@ -23,7 +24,7 @@ spec:
   - ReadWriteOnce
   resources:
     requests:
-      storage: 5Gi
+      storage: 10Gi
 ---
 apiVersion: apps/v1
 kind: StatefulSet
@@ -44,7 +45,7 @@ spec:
     spec:
       containers:
       - name: influxdb
-        image: influxdb:1.6.0
+        image: influxdb:1.7.8
         ports:
         - containerPort: 8086
         volumeMounts:
@@ -52,10 +53,10 @@ spec:
           mountPath: /var/lib/influxdb
         resources:
           requests:
-            cpu: 50m
+            cpu: 100m
             memory: 2Gi
           limits:
-            cpu: 400m
+            cpu: "1"
             memory: 2Gi
       volumes:
       - name: data
